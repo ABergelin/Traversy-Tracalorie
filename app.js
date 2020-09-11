@@ -1,4 +1,61 @@
 // Storage Controller
+const StorageCtrl = (function(){
+    // Public methods
+    return {
+        storeItem: function (item) {
+            let items = [];
+            // Check if any items in ls
+            if (localStorage.getItem('items') === null) {
+                items = [];
+                // Push new item
+                items.push(item);
+                // Set ls
+                localStorage.setItem('items', JSON.stringify(items));
+            } else {
+                // Get what is already in ls
+                items = JSON.parse(localStorage.getItem('items'));
+
+                // Push new item
+                items.push(item);
+
+                // Reset ls
+                localStorage.setItem('items', JSON.stringify(items));
+            }
+        },
+        getItemsFromStorage: function(){
+            let items;
+            if (localStorage.getItem('items') === null) {
+                items = [];
+            } else {
+                items = JSON.parse(localStorage.getItem('items'));
+            }
+            return items;
+        },
+        updateItemStorage: function(updatedItem){
+            let items = JSON.parse(localStorage.getItem('items'));
+
+            items.forEach(function(item, index){
+                if (updatedItem.id === item.id) {
+                    items.splice(index, 1, updatedItem);
+                }
+            });
+            localStorage.setItem('items', JSON.stringify(items));
+        },
+        deleteItemFromStorage: function(id){
+            let items = JSON.parse(localStorage.getItem('items'));
+
+            items.forEach(function(item, index){
+                if (id === item.id) {
+                    items.splice(index, 1);
+                }
+            });
+            localStorage.setItem('items', JSON.stringify(items));
+        },
+        clearItemsFromStorage: function(){
+            localStorage.removeItem('items');
+        }
+    }
+})();
 
 
 // Item Controller
@@ -12,11 +69,12 @@ const ItemCtrl = (function () {
 
     //Data Structure / State
     const data = {
-        items: [
+      //  items: [
             //    {id: 0, name: 'Steak', calories: 1200},
             //    {id: 1, name: 'Cookies', calories: 400},
             //    {id: 2, name: 'Eggs', calories: 300}
-        ],
+      //  ],
+        items: StorageCtrl.getItemsFromStorage(),
         currentItem: null,
         totalCalories: 0
     };
@@ -238,7 +296,7 @@ const UICtrl = (function () {
 })();
 
 //App Controller
-const App = (function (ItemCtrl, UICtrl) {
+const App = (function (ItemCtrl, StorageCtrl, UICtrl) {
     // Load event listeners
     const loadEventListeners = function () {
         const UISelectors = UICtrl.getSelectors();
@@ -288,6 +346,9 @@ const App = (function (ItemCtrl, UICtrl) {
             // Add total calories to UI
             UICtrl.showTotalCalories(totalCalories);
 
+            // Store in local storage
+            StorageCtrl.storeItem(newItem);
+
             // Clear fields
             UICtrl.clearInput();
         }
@@ -336,6 +397,9 @@ const App = (function (ItemCtrl, UICtrl) {
         // Add total calories to UI
         UICtrl.showTotalCalories(totalCalories);
 
+        // Update ls
+        StorageCtrl.updateItemStorage(updatedItem);
+
         UICtrl.clearEditState();
 
         e.preventDefault();
@@ -358,6 +422,9 @@ const App = (function (ItemCtrl, UICtrl) {
         // Add total calories to UI
         UICtrl.showTotalCalories(totalCalories);
 
+        // Delete from ls
+        StorageCtrl.deleteItemFromStorage(currentItem.id);
+
         UICtrl.clearEditState();
 
         e.preventDefault();
@@ -376,6 +443,9 @@ const App = (function (ItemCtrl, UICtrl) {
 
         // Remove from UI
         UICtrl.removeItems();
+
+        // Clear ls
+        StorageCtrl.clearItemsFromStorage();
 
         // Hide UL
         UICtrl.hideList();
@@ -410,7 +480,7 @@ const App = (function (ItemCtrl, UICtrl) {
         }
     }
 
-})(ItemCtrl, UICtrl);
+})(ItemCtrl,StorageCtrl, UICtrl);
 
 //Initialise app
 App.init();
